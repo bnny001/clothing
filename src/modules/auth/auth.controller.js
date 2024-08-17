@@ -15,84 +15,39 @@ class AuthController {
         autoBind( this );
     }
 
-    async login( req, res, next ) {
+    async loginviaEmail( req, res, next ) {
         try {
             const loginData = new this.dto.LoginRequestDTO( req.body );
-            const response = await this.service.login( loginData.email, loginData.password );
+            const response = await this.service.loginviaEmail( loginData.email, loginData.password );
             res.sendCalmResponse( new this.dto.LoginResponseDTO( response.data ) );
         } catch ( e ) {
-            next( e );
-        }
-    }
-
-    async register( req, res, next ) {
-        try {
-            const registerData = new this.dto.RegisterRequestDTO( { ...req.body } );
-            const response = await this.service.register( registerData );
-            res.sendCalmResponse( new this.dto.RegisterResponseDTO( response.data ) );
-        } catch ( e ) {
-            next( e );
-        }
-    }
-
-    async requestPasswordReset( req, res, next ) {
-        try {
-            const { email } = req.body;
-            const { otp } = await this.service.requestPasswordReset( email );
-            console.log('OTP', otp);
-            // Send Email
-            res.sendCalmResponse( null );
-        } catch ( e ) {
-            next( e );
-        }
-    }
-
-
-    async resetPassword( req, res, next ) {
-        try {
-            const { email, otp, password } = req.body;
-            if( !email || !otp || !password ) {
-                const error = new Error( 'Email, OTP & Password is required' );
-                error.statusCode = 422;
-                throw error;
+            if (e.message.includes('required')) {
+                return res.status(400).json({ message: e.message, statusCode: 400, data: {}, error: true, responseTimestamp: new Date().toISOString() });
             }
-            await this.service.resetPassword( email, otp, password );
-
-            res.sendCalmResponse( null, { 'updated': true } );
-        } catch ( e ) {
             next( e );
         }
     }
 
-    async changePassword( req, res, next ) {
+    async loginviaPhone(req, res, next) {
         try {
-            const id = req.user._id;
-            await this.service.changePassword( id, req.body.password );
-            res.sendCalmResponse( null, { 'updated': true } );
-        } catch ( e ) {
-            next( e );
+            const { phoneNumber } = req.body;
+
+            const response = await this.service.loginviaPhone( phoneNumber );
+            res.sendCalmResponse( response.data, { message: response.message } );
+            
+        } catch (error) {
+            next(error);
         }
     }
 
-    async getProfile( req, res, next ) {
-        try{
-            const id = req.user._id;
-            const response = await this.service.getProfile( id );
-            res.sendCalmResponse( new this.userDTO.GetDTO( response.data ) );
+    async verify(req, res, next) {
+        try {
+            const { phoneNumber, otp } = req.body;
 
-        } catch ( e ) {
-            next( e );
-        }
-    }
-
-    async updateProfile( req, res, next ) {
-        try{
-            const id = req.user._id;
-            await this.service.updateProfile( id, new this.userDTO.GetDTO( req.body ) );
-            res.sendCalmResponse( null, { 'updated': true } );
-
-        } catch ( e ) {
-            next( e );
+            const response = await this.service.verify( phoneNumber, otp );
+            res.sendCalmResponse( response.data );
+        } catch (error) {
+            next(error);
         }
     }
 
@@ -118,13 +73,6 @@ class AuthController {
         }
     }
 
-    /**
-     * Checks if the user is logged in and its optional, If logged in the user object is injected into req.
-     * @param req
-     * @param res
-     * @param next
-     * @returns {Promise<void>}
-     */
     async optionalCheckLogin( req, res, next ) {
         try {
             const token = this.extractToken( req );
@@ -138,6 +86,40 @@ class AuthController {
         }
     }
 
+    async resetPasswordRequest(req, res, next) {
+        try {
+            const { email } = req.body;
+
+            const response = await this.service.resetPasswordRequest( email );
+
+            res.sendCalmResponse( response.data );
+        } catch (error) {
+            next( error );
+        }
+    }
+
+    async verifyResetToken(req, res, next) {
+        try {
+            const { email, resetToken } = req.body;
+            const response = await this.service.verifyResetToken( email, resetToken )
+
+            res.sendCalmResponse( response.data );
+        } catch (error) {
+            next( error );
+        }
+    }
+
+    async resetPassword( req, res, next ) {
+        try {
+            const { email, resetToken, newPassword } = req.body;
+
+            const response = await this.service.resetPassword( email, resetToken, newPassword );
+            res.sendCalmResponse( response.data );
+        } catch (error) {
+            next(error);
+        }
+    }
+
     extractToken( req ) {
         if ( req.headers.authorization && req.headers.authorization.split( ' ' )[ 0 ] === 'Bearer' ) {
             return req.headers.authorization.split( ' ' )[ 1 ];
@@ -147,7 +129,7 @@ class AuthController {
         return null;
     }
 
-
+    
 }
 
 module.exports = new AuthController( authService );

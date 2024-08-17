@@ -5,6 +5,16 @@ class LoginRequestDTO {
     constructor( { ...props } ) {
         this.email = props.email ? props.email.toLowerCase() : undefined;
         this.password = props.password;
+        this.username = props.username;
+        this.role = props.role;
+
+        const requiredFields = ['email', 'password'];
+
+        const missingFields = requiredFields.filter(field => !props[field]);
+        if (missingFields.length > 0) {
+            throw new Error(`${missingFields.join(', ')} ${missingFields.length > 1 ? 'are' : 'is'} required`);
+        }
+        
         Object.freeze( this );
     }
 }
@@ -20,8 +30,16 @@ class LoginResponseDTO {
 class RegisterRequestDTO {
     constructor( { ...props } ) {
         this.email = props.email ? props.email.toLowerCase() : undefined;
-        this.name = props.name;
+        this.username = props.username;
+        this.role = props.role;
         this.password = props.password;
+
+        const requiredFields = ['email', 'password'];
+
+        const missingFields = requiredFields.filter(field => !props[field]);
+        if (missingFields.length > 0) {
+            throw new Error(`${missingFields.join(', ')} ${missingFields.length > 1 ? 'are' : 'is'} required`);
+        }
 
         // Delete Fields which are not present in data
         Object.keys( this ).forEach( key => {
@@ -29,6 +47,7 @@ class RegisterRequestDTO {
                 delete this[ key ];
             }
         } );
+        
         Object.freeze( this );
     }
 }

@@ -1,19 +1,20 @@
 'use strict';
 const AuthController = require( './auth.controller' );
 const express = require( 'express' ),
-    router = express.Router();
+router = express.Router();
 
-router.post( '/login', AuthController.login );
-router.delete( '/logout', AuthController.checkLogin, AuthController.logout );
+router.post('/login', AuthController.loginviaEmail );
+router.post('/login-viaPhone', AuthController.loginviaPhone );
 
-router.post( '/register', AuthController.register );
+router.post( '/verify', AuthController.verify );
 
-router.post( '/change-password', AuthController.checkLogin, AuthController.changePassword );
-router.post( '/request-password-reset', AuthController.requestPasswordReset );
+router.post('/reset-password-request', AuthController.resetPasswordRequest)
+router.post('/verifyToken', AuthController.verifyResetToken)
+router.post('/reset-password', AuthController.resetPassword)
 
-router.post( '/password-reset', AuthController.resetPassword );
+router.use(AuthController.checkLogin)
 
-router.get( '/profile', AuthController.checkLogin, AuthController.getProfile );
-router.put( '/profile', AuthController.checkLogin, AuthController.updateProfile );
+router.delete('/logout', AuthController.logout );
+
 
 module.exports = router;
